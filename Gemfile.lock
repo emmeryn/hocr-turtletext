@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     hocr_turtletext (0.1.0)
-      nokogiri (~> 1.10.7)
+      nokogiri (~> 1.10, >= 1.10.7)
 
 GEM
   remote: https://rubygems.org/
