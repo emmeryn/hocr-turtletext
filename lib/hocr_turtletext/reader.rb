@@ -98,7 +98,9 @@ class HocrTurtletext::Reader
   end
 
   def add_positional_info_to_line(ocr_line)
-    ocr_line.css('span.ocrx_word, span.ocr_word').map do |word|
+    ocr_line.css('span.ocrx_word, span.ocr_word')
+            .reject { |word| word.text.strip.empty? }
+            .map do |word|
       word_attributes = word.attributes['title'].value.to_s
                             .delete(';').split(' ')
       info(word, word_attributes)
