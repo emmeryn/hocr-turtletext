@@ -66,46 +66,6 @@ class HocrTurtletext::Reader
     @options[:y_precision] ||= 3
   end
 
-  def fuzzed_y(input)
-    output = []
-    input.keys.sort.each do |precise_y|
-      matching_y = output.map(&:first)
-                         .select { |new_y| (new_y - precise_y).abs < y_precision }
-                         .first || precise_y
-      y_index = output.index{ |y| y.first == matching_y }
-      new_row_content = input[precise_y].to_a
-      if y_index
-        row_content = output[y_index].last
-        row_content += new_row_content
-        output[y_index] = [matching_y,row_content.sort{ |a,b| a.first <=> b.first }]
-      else
-        output << [matching_y,new_row_content.sort{ |a,b| a.first <=> b.first }]
-      end
-    end
-    output
-  end
-
-  def concat_words_in_lines(fuzzed_y)
-    fuzzed_y.map do |line|
-      x_pos_keyed_words = line[1]
-      concatenated_words = []
-      x_pos_keyed_words.each do |x_pos_keyed_word|
-        word_hash = x_pos_keyed_word[1]
-        if concatenated_words.empty? ||
-           word_hash[:x_start] - concatenated_words.last[:x_end] > x_whitespace_threshold
-          concatenated_words.push word_hash
-        else
-          concatenated_words.last[:word] = "#{concatenated_words.last[:word]} #{word_hash[:word]}"
-          concatenated_words.last[:x_end] = word_hash[:x_end]
-        end
-      end
-      line[1] = concatenated_words.map! do |word_hash|
-        [word_hash[:x_start], word_hash[:word]]
-      end
-      line
-    end
-  end
-
   def extract_words_from_html(html)
     pos_info_words = []
 
@@ -129,6 +89,46 @@ class HocrTurtletext::Reader
       pos_hash[run[:y_start]][run[:x_start]] = run
     end
     pos_hash
+  end
+
+  def fuzzed_y(input)
+    output = []
+    input.keys.sort.each do |precise_y|
+      matching_y = output.map(&:first)
+                       .select { |new_y| (new_y - precise_y).abs < y_precision }
+                       .first || precise_y
+      y_index = output.index{ |y| y.first == matching_y }
+      new_row_content = input[precise_y].to_a
+      if y_index
+        row_content = output[y_index].last
+        row_content += new_row_content
+        output[y_index] = [matching_y,row_content.sort{ |a,b| a.first <=> b.first }]
+      else
+        output << [matching_y,new_row_content.sort{ |a,b| a.first <=> b.first }]
+      end
+    end
+    output
+  end
+
+  def concat_words_in_lines(fuzzed_y)
+    fuzzed_y.map do |line|
+      x_pos_keyed_words = line[1]
+      concatenated_words = []
+      x_pos_keyed_words.each do |x_pos_keyed_word|
+        word_hash = x_pos_keyed_word[1]
+        if concatenated_words.empty? ||
+            word_hash[:x_start] - concatenated_words.last[:x_end] > x_whitespace_threshold
+          concatenated_words.push word_hash
+        else
+          concatenated_words.last[:word] = "#{concatenated_words.last[:word]} #{word_hash[:word]}"
+          concatenated_words.last[:x_end] = word_hash[:x_end]
+        end
+      end
+      line[1] = concatenated_words.map! do |word_hash|
+        [word_hash[:x_start], word_hash[:word]]
+      end
+      line
+    end
   end
 
   def word_info(word, data)
